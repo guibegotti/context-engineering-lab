@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.data_loader import list_world_document_names, load_world_document
 from app.models import ContextDocument, ContextPackage, ContextStrategy, QuestionSpec
+from app.token_counter import count_tokens
 
 
 MINIMAL_CONTEXT = """# Campaign brief
@@ -13,7 +14,7 @@ MINIMAL_CONTEXT = """# Campaign brief
 
 
 def estimate_tokens(text: str) -> int:
-    return max(1, len(text) // 4)
+    return max(1, count_tokens(text))
 
 
 def _select_documents(
@@ -73,4 +74,3 @@ def build_context(question: QuestionSpec, strategy: ContextStrategy) -> ContextP
         document_names=[doc.name for doc in documents],
         token_estimate=estimate_tokens(prompt),
     )
-

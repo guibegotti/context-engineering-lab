@@ -8,6 +8,7 @@ from openai import OpenAI
 from app.config import get_settings
 from app.metrics import estimate_cost_usd
 from app.models import ContextPackage, LLMResult, ModelChoice, QuestionSpec, UsageMetrics
+from app.token_counter import count_tokens
 
 
 class LLMClient:
@@ -39,17 +40,20 @@ class LLMClient:
             return self._simulate(question, context_package, model_choice), "simulated"
         return self._call_remote(question, context_package, model_choice), "live"
 
+    def _selected_model_name(self, model_choice: ModelChoice) -> str:
+        return (
+            self.settings.model_strong
+            if model_choice == ModelChoice.strong
+            else self.settings.model_medium
+        )
+
     def _call_remote(
         self,
         question: QuestionSpec,
         context_package: ContextPackage,
         model_choice: ModelChoice,
     ) -> LLMResult:
-        model_name = (
-            self.settings.model_strong
-            if model_choice == ModelChoice.strong
-            else self.settings.model_medium
-        )
+        model_name = self._selected_model_name(model_choice)
 
         started_at = time.perf_counter()
         completion = self._client.chat.completions.create(
@@ -96,6 +100,7 @@ class LLMClient:
         model_choice: ModelChoice,
     ) -> LLMResult:
         started_at = time.perf_counter()
+        selected_model_name = self._selected_model_name(model_choice)
         combined_context = "\n".join(doc.content for doc in context_package.documents).casefold()
         scores: dict[str, float] = defaultdict(float)
         target_label = self._target_label(question.question)
@@ -175,8 +180,8 @@ class LLMClient:
                     "3. Uma leitura apressada do conjunto favorece conclusões menos estáveis."
                 )
 
-        completion_tokens = max(80, len(answer) // 3)
-        prompt_tokens = context_package.token_estimate
+        completion_tokens = count_tokens(answer, selected_model_name)
+        prompt_tokens = count_tokens(context_package.prompt, selected_model_name)
         total_tokens = prompt_tokens + completion_tokens
         latency_ms = int((time.perf_counter() - started_at) * 1000) + 40
         estimated_cost = estimate_cost_usd(
