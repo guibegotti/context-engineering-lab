@@ -1,0 +1,201 @@
+[
+  {
+    "id": "festival-sabotage",
+    "title": "Sabotagem no festival portuário",
+    "question": "Qual facção teria mais interesse em sabotar o festival da cidade portuária?",
+    "relevant_documents": [
+      "factions.md",
+      "timeline.md",
+      "npcs.md"
+    ],
+    "expected_answer": {
+      "entity": "Consórcio da Âncora Negra",
+      "answer": "O Consórcio da Âncora Negra é a facção com maior incentivo para sabotar o festival.",
+      "rationale": "A facção perderá margem de lucro com a inspeção nova de cargas e já posicionou aliados perto dos armazéns do cais.",
+      "evidence": [
+        {
+          "doc": "factions.md",
+          "detail": "O Consórcio lucra com contrabando costeiro e teme a inspeção de manifesto anunciada para a semana do festival."
+        },
+        {
+          "doc": "timeline.md",
+          "detail": "A inspeção extraordinária foi marcada para o mesmo dia da abertura do festival de Maré Alta."
+        },
+        {
+          "doc": "npcs.md",
+          "detail": "Marta Venn, ligada ao consórcio, tem acesso a barqueiros e depósitos periféricos do porto."
+        }
+      ]
+    },
+    "scoring": {
+      "required_terms": [
+        "Consórcio da Âncora Negra",
+        "inspeção",
+        "festival",
+        "contrabando"
+      ],
+      "bonus_terms": [
+        "manifesto",
+        "Marta Venn",
+        "armazéns"
+      ],
+      "hallucination_terms": [
+        "dragão",
+        "necromante",
+        "império solar"
+      ],
+      "candidate_terms": {
+        "Consórcio da Âncora Negra": [
+          "contrabando",
+          "inspeção de manifesto",
+          "marta venn",
+          "armazém 9",
+          "festival de maré alta"
+        ],
+        "Círculo da Lanterna": [
+          "vigília do farol",
+          "procissão de sal",
+          "culto das marés"
+        ],
+        "Casa do Estaleiro Vermelho": [
+          "novo cais",
+          "pedra naval",
+          "licitação"
+        ]
+      }
+    }
+  },
+  {
+    "id": "npc-smuggler-help",
+    "title": "Cúmplice ideal dos contrabandistas",
+    "question": "Qual NPC teria mais chance de ajudar contrabandistas a escapar durante uma fiscalização surpresa?",
+    "relevant_documents": [
+      "npcs.md",
+      "session_notes.md",
+      "timeline.md"
+    ],
+    "expected_answer": {
+      "entity": "Marta Venn",
+      "answer": "Marta Venn é a NPC com maior probabilidade de facilitar a fuga dos contrabandistas.",
+      "rationale": "Ela administra turnos de barqueiros, conhece os horários cegos do cais e já foi citada em notas anteriores como elo logístico do consórcio.",
+      "evidence": [
+        {
+          "doc": "npcs.md",
+          "detail": "Marta Venn coordena barqueiros de aluguel e mantém chave de um depósito sem registro no cais externo."
+        },
+        {
+          "doc": "session_notes.md",
+          "detail": "Jogadores ouviram que Marta compra silêncio com favores de transporte noturno."
+        },
+        {
+          "doc": "timeline.md",
+          "detail": "A fiscalização surpresa acontece na troca de guarda do terceiro sino, justamente quando os barqueiros de Marta assumem."
+        }
+      ]
+    },
+    "scoring": {
+      "required_terms": [
+        "Marta Venn",
+        "barqueiros",
+        "fiscalização",
+        "depósito"
+      ],
+      "bonus_terms": [
+        "troca de guarda",
+        "transporte noturno",
+        "cais externo"
+      ],
+      "hallucination_terms": [
+        "teleporte",
+        "portal astral",
+        "golem de guerra"
+      ],
+      "candidate_terms": {
+        "Marta Venn": [
+          "barqueiros",
+          "depósito sem registro",
+          "transporte noturno",
+          "troca de guarda",
+          "cais externo"
+        ],
+        "Irmã Selka": [
+          "sino afundado",
+          "vigília do farol",
+          "prece de maré"
+        ],
+        "Doran Vale": [
+          "fatura do estaleiro",
+          "pedra naval",
+          "contrato de reparo"
+        ]
+      }
+    }
+  },
+  {
+    "id": "secret-meeting",
+    "title": "Encontro clandestino",
+    "question": "Qual local seria mais seguro para uma reunião clandestina longe da guarda portuária?",
+    "relevant_documents": [
+      "locations.md",
+      "session_notes.md",
+      "rumors.md"
+    ],
+    "expected_answer": {
+      "entity": "Cavernas de Sal Baixo",
+      "answer": "As Cavernas de Sal Baixo são o local mais seguro para uma reunião clandestina.",
+      "rationale": "Elas ficam fora da rota normal de patrulha, têm acesso por maré baixa e já foram mencionadas como ponto usado por mensageiros discretos.",
+      "evidence": [
+        {
+          "doc": "locations.md",
+          "detail": "As cavernas só ficam acessíveis por duas horas na maré baixa e estão fora do mapa oficial da guarda."
+        },
+        {
+          "doc": "session_notes.md",
+          "detail": "Um contato local sugeriu o lugar para troca de cartas sem testemunhas."
+        },
+        {
+          "doc": "rumors.md",
+          "detail": "Boatos exageram monstros no local, o que afasta curiosos e ajuda no sigilo."
+        }
+      ]
+    },
+    "scoring": {
+      "required_terms": [
+        "Cavernas de Sal Baixo",
+        "maré baixa",
+        "guarda",
+        "sigilo"
+      ],
+      "bonus_terms": [
+        "fora do mapa",
+        "troca de cartas",
+        "afasta curiosos"
+      ],
+      "hallucination_terms": [
+        "castelo voador",
+        "biblioteca imperial",
+        "porto celestial"
+      ],
+      "candidate_terms": {
+        "Cavernas de Sal Baixo": [
+          "maré baixa",
+          "fora do mapa oficial",
+          "troca de cartas",
+          "afasta curiosos",
+          "cavernas"
+        ],
+        "Mercado das Cordas": [
+          "multidão",
+          "pregão",
+          "fiscais do sal"
+        ],
+        "Farol de Vidro": [
+          "vigília",
+          "acólitos",
+          "procissão"
+        ]
+      }
+    }
+  }
+]
+
