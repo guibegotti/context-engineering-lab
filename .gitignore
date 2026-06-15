@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.streamlit/
+.env
+results/*.db
+results/*.sqlite3
+results/*.json
+!results/.gitkeep
+
