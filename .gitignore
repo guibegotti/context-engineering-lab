@@ -5,7 +5,7 @@ __pycache__/
 .streamlit/
 .env
 results/*.db
+results/*.db-journal
 results/*.sqlite3
 results/*.json
 !results/.gitkeep
-
