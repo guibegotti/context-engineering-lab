@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -21,6 +22,25 @@ st.set_page_config(
     page_title="Context Engineering Lab",
     page_icon="🧪",
     layout="wide",
+)
+
+st.markdown(
+    """
+    <style>
+    .stCode pre {
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    .stCode code {
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 service = ExperimentService()
@@ -94,17 +114,66 @@ def go_home() -> None:
         st.rerun()
 
 
+def describe_context_document(document_name: str) -> str:
+    descriptions = {
+        "locations.md": "Locais relevantes, incluindo cidades e pontos de interesse.",
+        "factions.md": "Facções, interesses e disputas de poder.",
+        "npcs.md": "NPCs, vínculos e oportunidades de ação.",
+        "timeline.md": "Linha do tempo com eventos que afetam o presente.",
+        "session_notes.md": "Anotações acumuladas das sessões e pistas já vistas.",
+        "rumors.md": "Rumores e boatos que podem ajudar ou confundir.",
+        "irrelevant_lore.md": "Lore decorativo e ruído proposital para testar excesso de contexto.",
+    }
+    return descriptions.get(document_name, "Documento incluído no contexto do experimento.")
+
+
+def format_context_documents_for_display(context_documents: list[str]) -> str:
+    if not context_documents:
+        payload = [
+            {
+                "contexto": None,
+                "descricao": "Sem documentos adicionais. Este experimento rodou apenas com a pergunta.",
+            }
+        ]
+    else:
+        payload = [
+            {
+                "contexto": document,
+                "descricao": describe_context_document(document),
+            }
+            for document in context_documents
+        ]
+
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 def render_result_card(result) -> None:
     st.subheader("Resposta")
     st.markdown(result.answer)
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Qualidade", result.evaluation.quality_score)
-    col2.metric("Aderência", result.evaluation.adherence_score)
-    col3.metric("Evidências", result.evaluation.evidence_score)
+    col1.metric(
+        "Qualidade",
+        result.evaluation.quality_score,
+        help="Score final de 0 a 100 após combinar acertos, aderência e penalidades.",
+    )
+    col2.metric(
+        "Aderência",
+        result.evaluation.adherence_score,
+        help="Mostra o quanto a resposta ficou alinhada ao contexto e à pergunta.",
+    )
+    col3.metric(
+        "Evidências",
+        result.evaluation.evidence_score,
+        help="Indica quantos termos e pistas essenciais do gabarito apareceram na resposta.",
+    )
     hallucination_penalty = result.evaluation.hallucination_penalty
     penalty_display = "0" if hallucination_penalty == 0 else f"-{hallucination_penalty}"
-    col4.metric("Penalidade por alucinação", penalty_display)
+    col4.metric(
+        "Penalidade por alucinação",
+        penalty_display,
+        help="Desconta desvios ou termos suspeitos detectados fora do contexto esperado.",
+    )
 
     st.caption(
         f"Modo: `{result.mode}` | Modelo: `{result.usage.model_name}` | "
@@ -113,15 +182,17 @@ def render_result_card(result) -> None:
         f"Custo estimado: `${result.usage.estimated_cost_usd:.6f}`"
     )
 
-    st.markdown("**Contexto usado**")
-    st.write(result.context_documents or ["Sem documentos"])
+    with st.expander("Contexto usado", expanded=False):
+        st.code(
+            format_context_documents_for_display(result.context_documents),
+            language="json",
+        )
 
-    with st.expander("Prompt montado"):
+    with st.expander("Prompt montado", expanded=False):
         st.code(result.context_preview, language="markdown")
 
-    with st.expander("Notas da avaliação"):
-        for note in result.evaluation.notes:
-            st.write(f"- {note}")
+    with st.expander("Notas da avaliação", expanded=False):
+        st.markdown("\n".join([f"- {note}" for note in result.evaluation.notes]))
 
 
 def result_summary_row(result) -> dict[str, object]:
@@ -147,36 +218,49 @@ def build_matrix_pivot_rows(matrix_results) -> list[dict[str, object]]:
         medium_result = by_pair.get((ModelChoice.medium, strategy_item))
         strong_result = by_pair.get((ModelChoice.strong, strategy_item))
 
+        score_pair = None
+        tokens_pair = None
+        cost_pair = None
+        diff_score = None
+        diff_tokens = None
+        diff_cost = None
+
+        if medium_result and strong_result:
+            score_pair = (
+                f"{medium_result.evaluation.quality_score} / "
+                f"{strong_result.evaluation.quality_score}"
+            )
+            tokens_pair = (
+                f"{medium_result.usage.total_tokens} / "
+                f"{strong_result.usage.total_tokens}"
+            )
+            cost_pair = (
+                f"${medium_result.usage.estimated_cost_usd:.6f} / "
+                f"${strong_result.usage.estimated_cost_usd:.6f}"
+            )
+            diff_score = (
+                strong_result.evaluation.quality_score
+                - medium_result.evaluation.quality_score
+            )
+            diff_tokens = (
+                strong_result.usage.total_tokens
+                - medium_result.usage.total_tokens
+            )
+            diff_cost = round(
+                strong_result.usage.estimated_cost_usd
+                - medium_result.usage.estimated_cost_usd,
+                6,
+            )
+
         rows.append(
             {
-                "strategy": strategy_label(strategy_item),
-                "medium_score": medium_result.evaluation.quality_score if medium_result else None,
-                "medium_tokens": medium_result.usage.total_tokens if medium_result else None,
-                "medium_latency_ms": medium_result.usage.latency_ms if medium_result else None,
-                "medium_cost_usd": medium_result.usage.estimated_cost_usd if medium_result else None,
-                "strong_score": strong_result.evaluation.quality_score if strong_result else None,
-                "strong_tokens": strong_result.usage.total_tokens if strong_result else None,
-                "strong_latency_ms": strong_result.usage.latency_ms if strong_result else None,
-                "strong_cost_usd": strong_result.usage.estimated_cost_usd if strong_result else None,
-                "delta_score": (
-                    strong_result.evaluation.quality_score - medium_result.evaluation.quality_score
-                    if medium_result and strong_result
-                    else None
-                ),
-                "delta_tokens": (
-                    strong_result.usage.total_tokens - medium_result.usage.total_tokens
-                    if medium_result and strong_result
-                    else None
-                ),
-                "delta_cost_usd": (
-                    round(
-                        strong_result.usage.estimated_cost_usd
-                        - medium_result.usage.estimated_cost_usd,
-                        6,
-                    )
-                    if medium_result and strong_result
-                    else None
-                ),
+                "Estratégia": strategy_label(strategy_item),
+                "Score m/f": score_pair,
+                "Dif. score": diff_score,
+                "Tokens m/f": tokens_pair,
+                "Dif. tokens": diff_tokens,
+                "Custo m/f": cost_pair,
+                "Dif. custo": diff_cost,
             }
         )
 
@@ -349,7 +433,7 @@ def render_experiments_page() -> None:
             use_container_width=True,
         )
 
-        st.markdown("### Pivot executivo")
+        st.markdown("### Comparativo executivo")
         st.dataframe(
             build_matrix_pivot_rows(st.session_state.matrix_results),
             use_container_width=True,
