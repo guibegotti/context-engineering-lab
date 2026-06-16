@@ -27,6 +27,26 @@ QUESTION_LABELS = {
     question.title: question.id
     for question in questions
 }
+MODEL_ORDER = [ModelChoice.medium, ModelChoice.strong]
+STRATEGY_ORDER = [
+    ContextStrategy.none,
+    ContextStrategy.minimum,
+    ContextStrategy.relevant,
+    ContextStrategy.abundant,
+]
+
+
+def model_label(model_choice: ModelChoice) -> str:
+    return "Modelo médio" if model_choice == ModelChoice.medium else "Modelo forte"
+
+
+def strategy_label(strategy: ContextStrategy) -> str:
+    return {
+        ContextStrategy.none: "Sem contexto",
+        ContextStrategy.minimum: "Contexto mínimo",
+        ContextStrategy.relevant: "Contexto relevante",
+        ContextStrategy.abundant: "Contexto abundante/ruidoso",
+    }[strategy]
 
 
 def render_result_card(result) -> None:
@@ -57,6 +77,18 @@ def render_result_card(result) -> None:
             st.write(f"- {note}")
 
 
+def result_summary_row(result) -> dict[str, object]:
+    return {
+        "model": model_label(result.model_choice),
+        "strategy": strategy_label(result.strategy),
+        "score": result.evaluation.quality_score,
+        "tokens": result.usage.total_tokens,
+        "latency_ms": result.usage.latency_ms,
+        "cost_usd": result.usage.estimated_cost_usd,
+        "mode": result.mode,
+    }
+
+
 st.title("Context Engineering Lab")
 st.caption("Teste se contexto relevante supera contexto abundante em tarefas narrativas dependentes de domínio.")
 
@@ -72,26 +104,17 @@ with st.sidebar:
     selected_question_title = st.selectbox("Pergunta", list(QUESTION_LABELS.keys()))
     model_choice = st.radio(
         "Modelo",
-        options=[ModelChoice.medium.value, ModelChoice.strong.value],
-        format_func=lambda item: "Modelo médio" if item == "medium" else "Modelo forte",
+        options=[item.value for item in MODEL_ORDER],
+        format_func=lambda item: model_label(ModelChoice(item)),
     )
     strategy = st.radio(
         "Estratégia de contexto",
-        options=[
-            ContextStrategy.none.value,
-            ContextStrategy.minimum.value,
-            ContextStrategy.relevant.value,
-            ContextStrategy.abundant.value,
-        ],
-        format_func=lambda item: {
-            "none": "Sem contexto",
-            "minimum": "Contexto mínimo",
-            "relevant": "Contexto relevante",
-            "abundant": "Contexto abundante/ruidoso",
-        }[item],
+        options=[item.value for item in STRATEGY_ORDER],
+        format_func=lambda item: strategy_label(ContextStrategy(item)),
     )
     run_single = st.button("Executar experimento", use_container_width=True)
     run_full = st.button("Comparar 4 estratégias", use_container_width=True)
+    run_matrix = st.button("Comparar modelos x estratégias", use_container_width=True)
 
 selected_question_id = QUESTION_LABELS[selected_question_title]
 
@@ -107,7 +130,7 @@ if run_full:
     st.subheader("Comparação")
     columns = st.columns(2)
     all_results = []
-    for idx, item in enumerate(ContextStrategy):
+    for idx, item in enumerate(STRATEGY_ORDER):
         result = service.run(
             question_id=selected_question_id,
             model_choice=ModelChoice(model_choice),
@@ -115,22 +138,39 @@ if run_full:
         )
         all_results.append(result)
         with columns[idx % 2]:
-            st.markdown(f"### {item.value}")
+            st.markdown(f"### {strategy_label(item)}")
             render_result_card(result)
 
     st.markdown("### Resumo comparativo")
-    summary_rows = [
-        {
-            "strategy": item.strategy.value,
-            "score": item.evaluation.quality_score,
-            "tokens": item.usage.total_tokens,
-            "latency_ms": item.usage.latency_ms,
-            "cost_usd": item.usage.estimated_cost_usd,
-            "mode": item.mode,
-        }
-        for item in all_results
-    ]
-    st.dataframe(summary_rows, use_container_width=True)
+    st.dataframe(
+        [result_summary_row(item) for item in all_results],
+        use_container_width=True,
+    )
+
+if run_matrix:
+    st.subheader("Matriz comparativa")
+    matrix_results = []
+
+    for model_item in MODEL_ORDER:
+        st.markdown(f"### {model_label(model_item)}")
+        columns = st.columns(2)
+
+        for idx, strategy_item in enumerate(STRATEGY_ORDER):
+            result = service.run(
+                question_id=selected_question_id,
+                model_choice=model_item,
+                strategy=strategy_item,
+            )
+            matrix_results.append(result)
+            with columns[idx % 2]:
+                st.markdown(f"#### {strategy_label(strategy_item)}")
+                render_result_card(result)
+
+    st.markdown("### Resumo da matriz")
+    st.dataframe(
+        [result_summary_row(item) for item in matrix_results],
+        use_container_width=True,
+    )
 
 st.markdown("---")
 st.subheader("Histórico recente")
@@ -140,4 +180,3 @@ if history:
     st.dataframe([item.model_dump() for item in history], use_container_width=True)
 else:
     st.info("Nenhum experimento gravado ainda.")
-
