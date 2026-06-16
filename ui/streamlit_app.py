@@ -90,6 +90,53 @@ def result_summary_row(result) -> dict[str, object]:
     }
 
 
+def build_matrix_pivot_rows(matrix_results) -> list[dict[str, object]]:
+    by_pair = {
+        (item.model_choice, item.strategy): item
+        for item in matrix_results
+    }
+    rows = []
+
+    for strategy_item in STRATEGY_ORDER:
+        medium_result = by_pair.get((ModelChoice.medium, strategy_item))
+        strong_result = by_pair.get((ModelChoice.strong, strategy_item))
+
+        rows.append(
+            {
+                "strategy": strategy_label(strategy_item),
+                "medium_score": medium_result.evaluation.quality_score if medium_result else None,
+                "medium_tokens": medium_result.usage.total_tokens if medium_result else None,
+                "medium_latency_ms": medium_result.usage.latency_ms if medium_result else None,
+                "medium_cost_usd": medium_result.usage.estimated_cost_usd if medium_result else None,
+                "strong_score": strong_result.evaluation.quality_score if strong_result else None,
+                "strong_tokens": strong_result.usage.total_tokens if strong_result else None,
+                "strong_latency_ms": strong_result.usage.latency_ms if strong_result else None,
+                "strong_cost_usd": strong_result.usage.estimated_cost_usd if strong_result else None,
+                "delta_score": (
+                    strong_result.evaluation.quality_score - medium_result.evaluation.quality_score
+                    if medium_result and strong_result
+                    else None
+                ),
+                "delta_tokens": (
+                    strong_result.usage.total_tokens - medium_result.usage.total_tokens
+                    if medium_result and strong_result
+                    else None
+                ),
+                "delta_cost_usd": (
+                    round(
+                        strong_result.usage.estimated_cost_usd
+                        - medium_result.usage.estimated_cost_usd,
+                        6,
+                    )
+                    if medium_result and strong_result
+                    else None
+                ),
+            }
+        )
+
+    return rows
+
+
 st.title("Context Engineering Lab")
 st.caption("Teste se contexto relevante supera contexto abundante em tarefas narrativas dependentes de domínio.")
 
@@ -172,6 +219,10 @@ if run_matrix:
         [result_summary_row(item) for item in matrix_results],
         use_container_width=True,
     )
+
+    st.markdown("### Pivot executivo")
+    pivot_rows = build_matrix_pivot_rows(matrix_results)
+    st.dataframe(pivot_rows, use_container_width=True)
 
 st.markdown("---")
 st.subheader("Diagnóstico do banco")
