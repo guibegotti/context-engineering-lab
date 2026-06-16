@@ -124,3 +124,19 @@ class RecentResult(AppBaseModel):
     estimated_cost_usd: float
     latency_ms: int
     provider: str
+
+
+class HistoryDetail(AppBaseModel):
+    run_id: str
+    created_at: datetime
+    question_id: str
+    model_choice: str
+    strategy: str
+    quality_score: int
+    total_tokens: int
+    estimated_cost_usd: float
+    latency_ms: int
+    provider: str
+    model_name: str
+    answer: str
+    context_documents: list[str]

@@ -18,7 +18,7 @@ class ExperimentService:
     def list_questions(self) -> list[QuestionSpec]:
         return list_questions()
 
-    def ensure_demo_history(self, minimum_runs: int = 3) -> None:
+    def ensure_demo_history(self, minimum_runs: int = 4) -> None:
         if self.client._client is not None:
             return
 
@@ -28,8 +28,9 @@ class ExperimentService:
 
         seed_plan = [
             ("festival-sabotage", ModelChoice.medium, ContextStrategy.none),
+            ("festival-sabotage", ModelChoice.medium, ContextStrategy.minimum),
             ("festival-sabotage", ModelChoice.medium, ContextStrategy.relevant),
-            ("secret-meeting", ModelChoice.strong, ContextStrategy.abundant),
+            ("festival-sabotage", ModelChoice.medium, ContextStrategy.abundant),
         ]
 
         for question_id, model_choice, strategy in seed_plan[current_runs:minimum_runs]:

@@ -8,7 +8,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.config import get_settings
-from app.models import ExperimentResponse, RecentResult
+from app.models import ExperimentResponse, HistoryDetail, RecentResult
 
 
 def estimate_cost_usd(model_choice: str, prompt_tokens: int, completion_tokens: int) -> float:
@@ -184,23 +184,58 @@ def list_recent_results(limit: int = 20) -> list[RecentResult]:
     ]
 
 
+def list_history_details(limit: int | None = None) -> list[HistoryDetail]:
+    query = """
+        SELECT
+            run_id,
+            created_at,
+            question_id,
+            model_choice,
+            strategy,
+            quality_score,
+            total_tokens,
+            estimated_cost_usd,
+            latency_ms,
+            provider,
+            model_name,
+            answer,
+            context_documents
+        FROM experiment_runs
+        ORDER BY created_at DESC
+    """
+
+    with _connect() as connection:
+        if limit is None:
+            rows = connection.execute(query).fetchall()
+        else:
+            rows = connection.execute(f"{query} LIMIT ?", (limit,)).fetchall()
+
+    return [
+        HistoryDetail(
+            run_id=row["run_id"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            question_id=row["question_id"],
+            model_choice=row["model_choice"],
+            strategy=row["strategy"],
+            quality_score=row["quality_score"],
+            total_tokens=row["total_tokens"],
+            estimated_cost_usd=row["estimated_cost_usd"],
+            latency_ms=row["latency_ms"],
+            provider=row["provider"],
+            model_name=row["model_name"],
+            answer=row["answer"],
+            context_documents=json.loads(row["context_documents"]),
+        )
+        for row in rows
+    ]
+
+
 def count_experiment_runs() -> int:
     with _connect() as connection:
         row = connection.execute(
             "SELECT COUNT(*) AS total FROM experiment_runs"
         ).fetchone()
     return int(row["total"])
-
-
-def get_database_debug_info() -> dict[str, object]:
-    configured_path = get_settings().results_db_path
-    resolved_path = resolve_db_path()
-    return {
-        "configured_path": str(configured_path),
-        "resolved_path": str(resolved_path),
-        "using_fallback_path": configured_path != resolved_path,
-        "experiment_runs_count": count_experiment_runs(),
-    }
 
 
 def new_run_id() -> str:
