@@ -6,7 +6,7 @@ from app.context_builder import build_context
 from app.data_loader import get_question, list_questions
 from app.evaluator import evaluate_answer
 from app.llm_client import LLMClient
-from app.metrics import init_db, new_run_id, save_experiment
+from app.metrics import count_experiment_runs, init_db, new_run_id, save_experiment
 from app.models import ContextStrategy, ExperimentResponse, ModelChoice, QuestionSpec
 
 
@@ -17,6 +17,27 @@ class ExperimentService:
 
     def list_questions(self) -> list[QuestionSpec]:
         return list_questions()
+
+    def ensure_demo_history(self, minimum_runs: int = 3) -> None:
+        if self.client._client is not None:
+            return
+
+        current_runs = count_experiment_runs()
+        if current_runs >= minimum_runs:
+            return
+
+        seed_plan = [
+            ("festival-sabotage", ModelChoice.medium, ContextStrategy.none),
+            ("festival-sabotage", ModelChoice.medium, ContextStrategy.relevant),
+            ("secret-meeting", ModelChoice.strong, ContextStrategy.abundant),
+        ]
+
+        for question_id, model_choice, strategy in seed_plan[current_runs:minimum_runs]:
+            self.run(
+                question_id=question_id,
+                model_choice=model_choice,
+                strategy=strategy,
+            )
 
     def run(
         self,
@@ -46,4 +67,3 @@ class ExperimentService:
         )
         save_experiment(response)
         return response
-

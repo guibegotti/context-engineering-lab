@@ -10,7 +10,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.experiment_service import ExperimentService
-from app.metrics import list_recent_results
+from app.metrics import get_database_debug_info, list_recent_results
 from app.models import ContextStrategy, ModelChoice
 
 
@@ -21,6 +21,7 @@ st.set_page_config(
 )
 
 service = ExperimentService()
+service.ensure_demo_history(minimum_runs=3)
 questions = service.list_questions()
 
 QUESTION_LABELS = {
@@ -171,6 +172,16 @@ if run_matrix:
         [result_summary_row(item) for item in matrix_results],
         use_container_width=True,
     )
+
+st.markdown("---")
+st.subheader("Diagnóstico do banco")
+db_info = get_database_debug_info()
+st.caption(
+    f"Banco resolvido: `{db_info['resolved_path']}` | "
+    f"Registros em experiment_runs: `{db_info['experiment_runs_count']}`"
+)
+with st.expander("Detalhes de persistência"):
+    st.json(db_info)
 
 st.markdown("---")
 st.subheader("Histórico recente")

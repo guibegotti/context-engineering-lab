@@ -184,5 +184,24 @@ def list_recent_results(limit: int = 20) -> list[RecentResult]:
     ]
 
 
+def count_experiment_runs() -> int:
+    with _connect() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS total FROM experiment_runs"
+        ).fetchone()
+    return int(row["total"])
+
+
+def get_database_debug_info() -> dict[str, object]:
+    configured_path = get_settings().results_db_path
+    resolved_path = resolve_db_path()
+    return {
+        "configured_path": str(configured_path),
+        "resolved_path": str(resolved_path),
+        "using_fallback_path": configured_path != resolved_path,
+        "experiment_runs_count": count_experiment_runs(),
+    }
+
+
 def new_run_id() -> str:
     return str(uuid4())
