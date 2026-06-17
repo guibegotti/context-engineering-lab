@@ -7,7 +7,7 @@ from app.data_loader import get_question, list_questions
 from app.evaluator import evaluate_answer
 from app.llm_client import LLMClient
 from app.metrics import count_experiment_runs, init_db, new_run_id, save_experiment
-from app.models import ContextStrategy, ExperimentResponse, ModelChoice, QuestionSpec
+from app.models import ContextStrategy, ExecutionMode, ExperimentResponse, ModelChoice, QuestionSpec
 
 
 class ExperimentService:
@@ -19,9 +19,6 @@ class ExperimentService:
         return list_questions()
 
     def ensure_demo_history(self, minimum_runs: int = 4) -> None:
-        if self.client._client is not None:
-            return
-
         current_runs = count_experiment_runs()
         if current_runs >= minimum_runs:
             return
@@ -38,6 +35,7 @@ class ExperimentService:
                 question_id=question_id,
                 model_choice=model_choice,
                 strategy=strategy,
+                execution_mode=ExecutionMode.sandbox,
             )
 
     def run(
@@ -45,10 +43,16 @@ class ExperimentService:
         question_id: str,
         model_choice: ModelChoice,
         strategy: ContextStrategy,
+        execution_mode: ExecutionMode = ExecutionMode.sandbox,
     ) -> ExperimentResponse:
         question = get_question(question_id)
         context_package = build_context(question, strategy)
-        llm_result, mode = self.client.generate(question, context_package, model_choice)
+        llm_result, mode = self.client.generate(
+            question,
+            context_package,
+            model_choice,
+            execution_mode=execution_mode,
+        )
         evaluation = evaluate_answer(question, llm_result.answer, context_package)
 
         response = ExperimentResponse(

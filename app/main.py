@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 
+from app.exceptions import ExperimentExecutionError
 from app.experiment_service import ExperimentService
 from app.metrics import list_recent_results
 from app.models import ExperimentRequest
@@ -36,7 +37,16 @@ def run_experiment(request: ExperimentRequest):
             question_id=request.question_id,
             model_choice=request.model_choice,
             strategy=request.strategy,
+            execution_mode=request.execution_mode,
         ).model_dump()
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-
+    except ExperimentExecutionError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={
+                "code": exc.code,
+                "message": exc.user_message,
+                "details": exc.details,
+            },
+        ) from exc

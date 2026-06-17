@@ -11,8 +11,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.experiment_service import ExperimentService
+from app.exceptions import ExperimentExecutionError
 from app.metrics import list_history_details, list_recent_results
-from app.models import ContextStrategy, ModelChoice
+from app.models import ContextStrategy, ExecutionMode, ModelChoice
 
 
 RECENT_HISTORY_LIMIT = 4
@@ -65,10 +66,13 @@ def init_state() -> None:
         "current_page": "home",
         "nav_history": [],
         "experiment_mode": "idle",
+        "execution_error": None,
         "single_result": None,
         "full_results": [],
         "matrix_results": [],
         "exp_selected_question": list(QUESTION_LABELS.keys())[0],
+        "exp_run_type": "single",
+        "exp_live_mode_enabled": False,
         "exp_model_choice": ModelChoice.medium.value,
         "exp_strategy": ContextStrategy.none.value,
     }
@@ -88,6 +92,14 @@ def strategy_label(strategy: ContextStrategy) -> str:
         ContextStrategy.relevant: "Contexto relevante",
         ContextStrategy.abundant: "Contexto abundante/ruidoso",
     }[strategy]
+
+
+def experiment_type_label(experiment_type: str) -> str:
+    return {
+        "single": "Unitário",
+        "full": "Comparativo 4 estratégias",
+        "matrix": "Comparativo modelos x estratégias",
+    }[experiment_type]
 
 
 def navigate_to(target_page: str) -> None:
@@ -238,6 +250,89 @@ def render_model_comparison_section(model_item, model_results) -> None:
         )
 
 
+def render_execution_error() -> None:
+    execution_error = st.session_state.execution_error
+    if not execution_error:
+        return
+
+    st.error(execution_error["message"])
+    if execution_error.get("details"):
+        with st.expander("Detalhes do erro", expanded=False):
+            st.code(execution_error["details"], language="text")
+
+
+def execute_selected_experiment(
+    question_id: str,
+    run_type: str,
+    execution_mode: ExecutionMode,
+    model_choice: ModelChoice,
+    strategy: ContextStrategy,
+) -> None:
+    completed_runs = 0
+    try:
+        if run_type == "single":
+            st.session_state.single_result = service.run(
+                question_id=question_id,
+                model_choice=model_choice,
+                strategy=strategy,
+                execution_mode=execution_mode,
+            )
+            completed_runs = 1
+            st.session_state.experiment_mode = "single"
+            st.session_state.full_results = []
+            st.session_state.matrix_results = []
+        elif run_type == "full":
+            full_results = []
+            for item in STRATEGY_ORDER:
+                full_results.append(
+                    service.run(
+                        question_id=question_id,
+                        model_choice=model_choice,
+                        strategy=item,
+                        execution_mode=execution_mode,
+                    )
+                )
+                completed_runs += 1
+
+            st.session_state.full_results = full_results
+            st.session_state.experiment_mode = "full"
+            st.session_state.single_result = None
+            st.session_state.matrix_results = []
+        else:
+            matrix_results = []
+            for model_item in MODEL_ORDER:
+                for strategy_item in STRATEGY_ORDER:
+                    matrix_results.append(
+                        service.run(
+                            question_id=question_id,
+                            model_choice=model_item,
+                            strategy=strategy_item,
+                            execution_mode=execution_mode,
+                        )
+                    )
+                    completed_runs += 1
+
+            st.session_state.matrix_results = matrix_results
+            st.session_state.experiment_mode = "matrix"
+            st.session_state.single_result = None
+            st.session_state.full_results = []
+
+        st.session_state.execution_error = None
+    except ExperimentExecutionError as exc:
+        details = exc.details
+        if completed_runs > 0:
+            partial_note = (
+                f"{completed_runs} execução(ões) já tinham sido concluídas antes da falha."
+            )
+            details = f"{details}\n{partial_note}" if details else partial_note
+
+        st.session_state.execution_error = {
+            "message": exc.user_message,
+            "details": details,
+            "code": exc.code,
+        }
+
+
 def result_summary_row(result) -> dict[str, object]:
     return {
         "model": model_label(result.model_choice),
@@ -383,60 +478,53 @@ def render_experiments_page() -> None:
             list(QUESTION_LABELS.keys()),
             key="exp_selected_question",
         )
+        run_type = st.selectbox(
+            "Tipo de experimento",
+            options=["single", "full", "matrix"],
+            format_func=experiment_type_label,
+            key="exp_run_type",
+        )
+        live_mode_enabled = st.toggle(
+            "Usar API real",
+            key="exp_live_mode_enabled",
+            help="Desligado usa Sandbox sem custo. Ligado faz chamadas reais para a API e pode consumir tokens.",
+        )
+        execution_mode = (
+            ExecutionMode.live.value if live_mode_enabled else ExecutionMode.sandbox.value
+        )
         model_choice = st.radio(
             "Modelo",
             options=[item.value for item in MODEL_ORDER],
             format_func=lambda item: model_label(ModelChoice(item)),
             key="exp_model_choice",
+            disabled=run_type == "matrix",
         )
         strategy = st.radio(
             "Estratégia de contexto",
             options=[item.value for item in STRATEGY_ORDER],
             format_func=lambda item: strategy_label(ContextStrategy(item)),
             key="exp_strategy",
+            disabled=run_type in {"full", "matrix"},
         )
-        run_single = st.button("Executar experimento", use_container_width=True)
-        run_full = st.button("Comparar 4 estratégias", use_container_width=True)
-        run_matrix = st.button("Comparar modelos x estratégias", use_container_width=True)
+        if execution_mode == ExecutionMode.live.value:
+            if not service.client.settings.api_key:
+                st.warning("OPENAI_API_KEY não está configurada neste ambiente.", icon="🔑")
+        else:
+            st.caption("Sandbox é o modo padrão e não faz chamadas externas pagas.")
+        run_experiment = st.button("Executar experimento", use_container_width=True)
 
     selected_question_id = QUESTION_LABELS[selected_question_title]
 
-    if run_single:
-        st.session_state.single_result = service.run(
+    if run_experiment:
+        execute_selected_experiment(
             question_id=selected_question_id,
+            run_type=run_type,
+            execution_mode=ExecutionMode(execution_mode),
             model_choice=ModelChoice(model_choice),
             strategy=ContextStrategy(strategy),
         )
-        st.session_state.experiment_mode = "single"
-        st.session_state.full_results = []
-        st.session_state.matrix_results = []
 
-    if run_full:
-        st.session_state.full_results = [
-            service.run(
-                question_id=selected_question_id,
-                model_choice=ModelChoice(model_choice),
-                strategy=item,
-            )
-            for item in STRATEGY_ORDER
-        ]
-        st.session_state.experiment_mode = "full"
-        st.session_state.single_result = None
-        st.session_state.matrix_results = []
-
-    if run_matrix:
-        st.session_state.matrix_results = [
-            service.run(
-                question_id=selected_question_id,
-                model_choice=model_item,
-                strategy=strategy_item,
-            )
-            for model_item in MODEL_ORDER
-            for strategy_item in STRATEGY_ORDER
-        ]
-        st.session_state.experiment_mode = "matrix"
-        st.session_state.single_result = None
-        st.session_state.full_results = []
+    render_execution_error()
 
     if st.session_state.experiment_mode == "single" and st.session_state.single_result is not None:
         render_result_card(

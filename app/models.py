@@ -22,6 +22,11 @@ class ContextStrategy(str, Enum):
     abundant = "abundant"
 
 
+class ExecutionMode(str, Enum):
+    sandbox = "sandbox"
+    live = "live"
+
+
 class SupportingEvidence(AppBaseModel):
     doc: str
     detail: str
@@ -95,6 +100,7 @@ class ExperimentRequest(AppBaseModel):
     question_id: str
     model_choice: ModelChoice
     strategy: ContextStrategy
+    execution_mode: ExecutionMode = ExecutionMode.sandbox
 
 
 class ExperimentResponse(AppBaseModel):

@@ -3,11 +3,21 @@ from __future__ import annotations
 import time
 from collections import defaultdict
 
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    APIStatusError,
+    APITimeoutError,
+    AuthenticationError,
+    BadRequestError,
+    OpenAI,
+    PermissionDeniedError,
+    RateLimitError,
+)
 
 from app.config import get_settings
+from app.exceptions import ExperimentExecutionError
 from app.metrics import estimate_cost_usd
-from app.models import ContextPackage, LLMResult, ModelChoice, QuestionSpec, UsageMetrics
+from app.models import ContextPackage, ExecutionMode, LLMResult, ModelChoice, QuestionSpec, UsageMetrics
 from app.token_counter import count_tokens
 
 
@@ -35,10 +45,86 @@ class LLMClient:
         question: QuestionSpec,
         context_package: ContextPackage,
         model_choice: ModelChoice,
+        execution_mode: ExecutionMode = ExecutionMode.sandbox,
     ) -> tuple[LLMResult, str]:
-        if self._client is None:
+        if execution_mode == ExecutionMode.sandbox:
             return self._simulate(question, context_package, model_choice), "simulated"
-        return self._call_remote(question, context_package, model_choice), "live"
+
+        if self._client is None:
+            raise ExperimentExecutionError(
+                "missing_api_key",
+                "API real exige uma chave válida em OPENAI_API_KEY.",
+                details=(
+                    "Nenhuma chave foi encontrada no ambiente atual. "
+                    "Mantenha o modo Sandbox ou configure OPENAI_API_KEY para usar a API real."
+                ),
+                status_code=400,
+            )
+
+        try:
+            return self._call_remote(question, context_package, model_choice), "live"
+        except AuthenticationError as exc:
+            raise ExperimentExecutionError(
+                "authentication_error",
+                "A API rejeitou a autenticação. Verifique se OPENAI_API_KEY está correta e ativa.",
+                details=self._build_error_details(exc),
+                status_code=401,
+            ) from exc
+        except PermissionDeniedError as exc:
+            raise ExperimentExecutionError(
+                "permission_denied",
+                "A conta ou projeto autenticado não tem permissão para usar esse modelo ou endpoint.",
+                details=self._build_error_details(exc),
+                status_code=403,
+            ) from exc
+        except BadRequestError as exc:
+            raise ExperimentExecutionError(
+                "bad_request",
+                "A requisição para a API foi rejeitada. Revise modelo, base URL e parâmetros enviados.",
+                details=self._build_error_details(exc),
+                status_code=400,
+            ) from exc
+        except RateLimitError as exc:
+            error_code, message = self._extract_remote_error(exc)
+            insufficient_quota = self._is_insufficient_quota(error_code, message)
+            raise ExperimentExecutionError(
+                "insufficient_quota" if insufficient_quota else "rate_limit",
+                (
+                    "A conta ficou sem saldo, cota ou limite de gasto para continuar na API real."
+                    if insufficient_quota
+                    else "A API real atingiu limite de taxa temporário. Tente novamente em instantes."
+                ),
+                details=self._build_error_details(exc),
+                status_code=402 if insufficient_quota else 429,
+            ) from exc
+        except APITimeoutError as exc:
+            raise ExperimentExecutionError(
+                "api_timeout",
+                "A chamada para a API demorou demais e expirou.",
+                details=self._build_error_details(exc),
+                status_code=504,
+            ) from exc
+        except APIConnectionError as exc:
+            raise ExperimentExecutionError(
+                "api_connection_error",
+                "Não foi possível conectar à API real. Verifique rede, proxy, VPN ou base URL.",
+                details=self._build_error_details(exc),
+                status_code=503,
+            ) from exc
+        except APIStatusError as exc:
+            raise ExperimentExecutionError(
+                "api_status_error",
+                "A API real retornou um erro inesperado ao processar o experimento.",
+                details=self._build_error_details(exc),
+                status_code=exc.status_code or 500,
+            ) from exc
+        except Exception as exc:
+            raise ExperimentExecutionError(
+                "unexpected_live_error",
+                "O experimento em API real falhou por um erro inesperado.",
+                details=str(exc),
+                status_code=500,
+            ) from exc
 
     def _selected_model_name(self, model_choice: ModelChoice) -> str:
         return (
@@ -201,6 +287,55 @@ class LLMClient:
                     "simulated-strong" if model_choice == ModelChoice.strong else "simulated-medium"
                 ),
             ),
+        )
+
+    @staticmethod
+    def _extract_remote_error(exc: Exception) -> tuple[str, str]:
+        response = getattr(exc, "response", None)
+        if response is None:
+            return "", str(exc)
+
+        try:
+            payload = response.json()
+        except Exception:
+            return "", str(exc)
+
+        error = payload.get("error", {}) if isinstance(payload, dict) else {}
+        if not isinstance(error, dict):
+            return "", str(exc)
+
+        return str(error.get("code") or ""), str(error.get("message") or str(exc))
+
+    def _build_error_details(self, exc: Exception) -> str:
+        error_code, message = self._extract_remote_error(exc)
+        status_code = getattr(exc, "status_code", None)
+        request_id = getattr(exc, "request_id", None)
+
+        parts = []
+        if status_code:
+            parts.append(f"status={status_code}")
+        if error_code:
+            parts.append(f"code={error_code}")
+        if request_id:
+            parts.append(f"request_id={request_id}")
+        if message:
+            parts.append(f"message={message}")
+
+        return " | ".join(parts) if parts else str(exc)
+
+    @staticmethod
+    def _is_insufficient_quota(error_code: str, message: str) -> bool:
+        combined = f"{error_code} {message}".casefold()
+        return any(
+            marker in combined
+            for marker in [
+                "insufficient_quota",
+                "billing",
+                "quota",
+                "credit",
+                "hard_limit",
+                "balance",
+            ]
         )
 
     @staticmethod
