@@ -462,7 +462,7 @@ For simpler cases:
 - adherence score is up to `20`, plus `10` if entity matches
 - hallucination penalty is `5 * hallucinated_terms`, capped at `15`
 
-### 12.5 Extended rubric behavior for complex cases
+### 12.5 Extended rubric behavior
 
 Case 4 required richer scoring, so the evaluator now supports:
 
