@@ -27,6 +27,12 @@ Um playground experimental para testar a hipótese de que contexto relevante ger
 - Persistência dos resultados em SQLite
 - Modo offline simulado quando não há chave de API configurada
 
+## Documentação técnica
+
+Para uma visão completa de arquitetura, cálculos, heurísticas de avaliação, persistência, UI e decisões de design, veja:
+
+- `docs/project_technical_guide.md`
+
 ## Estrutura
 
 ```text
@@ -86,4 +92,3 @@ O experimento favorece a hipótese quando `relevant` mantém ou melhora o score 
 ## Observação sobre custos
 
 O custo estimado usa preços configuráveis na `.env`. Os valores da `.env.example` são placeholders e devem ser revisados antes de qualquer comparação financeira real.
-
