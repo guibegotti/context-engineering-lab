@@ -685,7 +685,7 @@ Each case is meant to answer a different version of the same hypothesis:
 - Case 3: location/safety reasoning
 - Case 4: multi-document investigative synthesis under noise
 
-Case 4 ("Operação Fantasma") is especially important because it pushes the boundary where abundant context can begin to hurt, not just fail to help.
+Case 4 ("Operação Fantasma") is especially important because it pushes the boundary of context testing.
 
 Design ingredients added for that case:
 
