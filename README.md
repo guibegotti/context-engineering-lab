@@ -1,39 +1,39 @@
 # Context Engineering Lab
 
-Um playground experimental para testar a hipótese de que contexto relevante gera mais valor do que contexto abundante.
+An experimental playground for testing the hypothesis that relevant context creates more value than abundant context.
 
-## Hipótese
+## Hypothesis
 
-`H1`: contexto relevante, suficiente e bem selecionado supera contexto grande, redundante ou ruidoso.
+`H1`: relevant, sufficient, and well-selected context beats large, redundant, or noisy context.
 
-## O que a demo entrega
+## What the project includes
 
-- Interface Streamlit para escolher pergunta, modelo e estratégia de contexto
-- API FastAPI para listar perguntas e executar experimentos
-- Base fictícia de campanha de RPG genérico
-- Quatro estratégias de contexto:
+- A Streamlit interface for choosing a question, model, context strategy, and execution mode
+- A FastAPI backend for listing questions and running experiments
+- A fictional generic tabletop RPG campaign dataset
+- Four context strategies:
   - `none`
   - `minimum`
   - `relevant`
   - `abundant`
-- Avaliação heurística com:
-  - qualidade
-  - aderência ao contexto
-  - uso de evidências
-  - alucinação
+- Heuristic evaluation for:
+  - quality
+  - contextual adherence
+  - evidence usage
+  - hallucination / false-lead penalties
   - tokens
-  - latência
-  - custo estimado
-- Persistência dos resultados em SQLite
-- Modo offline simulado quando não há chave de API configurada
+  - latency
+  - estimated cost
+- SQLite result persistence
+- A default offline sandbox mode when no API key is configured
 
-## Documentação técnica
+## Technical documentation
 
-Para uma visão completa de arquitetura, cálculos, heurísticas de avaliação, persistência, UI e decisões de design, veja:
+For a complete explanation of the architecture, calculations, evaluation heuristics, persistence model, UI decisions, and design tradeoffs, see:
 
 - `docs/project_technical_guide.md`
 
-## Estrutura
+## Project structure
 
 ```text
 context-engineering-lab/
@@ -41,6 +41,7 @@ context-engineering-lab/
   data/
     rpg_world/
     questions.json
+  docs/
   results/
   ui/
   .env.example
@@ -57,38 +58,53 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Se você quiser usar OpenAI ou OpenRouter, preencha a `.env` com a chave e, se necessário, ajuste `OPENAI_BASE_URL`.
+If you want to use OpenAI or another OpenAI-compatible provider, fill in `.env` with your API key and adjust `OPENAI_BASE_URL` if needed.
 
-Sem chave, a app entra em modo `simulated`, útil para demonstrar a hipótese sem depender de rede.
+Without a key, the app remains usable in `sandbox` mode, which is useful for demos and local testing.
 
-## Rodando a UI
+## Running the UI
 
 ```bash
 streamlit run ui/streamlit_app.py
 ```
 
-## Rodando a API
+## Running the API
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Endpoints principais:
+Main endpoints:
 
 - `GET /health`
 - `GET /questions`
 - `GET /results/recent`
 - `POST /experiment`
 
-## Como interpretar os resultados
+## Experiment modes
 
-- `none`: baseline sem apoio factual
-- `minimum`: só um briefing curto da campanha
-- `relevant`: só os documentos necessários para a pergunta
-- `abundant`: contexto quase total com ruído proposital
+The UI supports three run types:
 
-O experimento favorece a hipótese quando `relevant` mantém ou melhora o score com menos tokens, menor custo e menor latência do que `abundant`.
+- `single`: one question with one model and one context strategy
+- `full`: one model compared across the four context strategies
+- `matrix`: medium and strong models compared across the four context strategies
 
-## Observação sobre custos
+It also supports two execution modes:
 
-O custo estimado usa preços configuráveis na `.env`. Os valores da `.env.example` são placeholders e devem ser revisados antes de qualquer comparação financeira real.
+- `sandbox`: local simulated mode, no paid API usage
+- `live`: real API calls using the configured provider
+
+## How to interpret results
+
+- `none`: baseline with no factual support
+- `minimum`: only a short campaign brief
+- `relevant`: only the documents required to answer the question
+- `abundant`: nearly the full document set, including deliberate noise
+
+The experiment supports the hypothesis when `relevant` preserves or improves quality with fewer tokens, lower cost, and lower latency than `abundant`.
+
+## Cost note
+
+Estimated cost is computed from configurable pricing values in `.env`.
+
+The defaults in the project are intended to match the configured logical model roles (`medium` and `strong`), but you should always review pricing before making real financial comparisons or running large live batches.
