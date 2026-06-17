@@ -20,3 +20,14 @@ Templo-farol do Círculo da Lanterna. Há vigília constante, noviços, sineiros
 
 Depósito úmido no cais externo, usado para cargas de baixa prioridade. Oficialmente está em manutenção, mas barqueiros locais juram ver luzes tarde da noite.
 
+## Cais dos Juncos
+
+Píer secundário voltado para mantimentos, óleo de lanterna e cargas de resposta rápida. Quando fecha, a cidade precisa decidir entre congestionamento no porto principal ou desvio terrestre para depósitos externos.
+
+## Píer da Névoa Fina
+
+Trapiche estreito usado para vistorias discretas e descarga em noites de chuva leve. Sua lanterna não é grande, mas basta um apagão curto para encobrir manobras que não deveriam passar sem conferência.
+
+## Entreposto da Colina Seca
+
+Depósito murado fora da zona de patrulha imediata do porto. Fica numa subida drenada, longe da multidão, e por isso parece eficiente em emergências — exatamente o tipo de lugar que também favorece relacres, conferências privadas e controle burocrático longe de testemunhas casuais.

@@ -196,6 +196,206 @@
         ]
       }
     }
+  },
+  {
+    "id": "operation-ghost",
+    "title": "Operação Fantasma",
+    "question": "Existe evidência suficiente para concluir que os eventos recentes fazem parte de uma única operação coordenada?\n\nSe sim:\n- qual facção provavelmente liderou a operação\n- qual era o objetivo estratégico\n- quais personagens participaram\n- quais evidências sustentam essa conclusão\n\nSe não:\n- quais evidências ainda faltam\n- quais hipóteses alternativas permanecem plausíveis",
+    "relevant_documents": [
+      "case_4_operation_ghost.md",
+      "factions.md",
+      "npcs.md",
+      "timeline.md",
+      "logistics.md",
+      "rumors.md"
+    ],
+    "expected_answer": {
+      "entity": "Mesa do Freixo Cinzento",
+      "answer": "Sim. Há evidência suficiente para tratar os incidentes como uma única operação coordenada, provavelmente liderada pela Mesa do Freixo Cinzento.",
+      "rationale": "O objetivo estratégico mais provável era desviar a inspeção emergencial e o controle dos manifestos para o Entreposto da Colina Seca, que a facção opera, permitindo relacrar cargas, reescrever duplicatas de manifesto e lucrar com armazenagem temporária. Os participantes mais prováveis foram Leris Vale, Meral Voss e Oren Selk. Os rumores contra Irmã Selka, Doran Vale, a Companhia do Litoral Quebrado e o Consórcio da Âncora Negra permanecem plausíveis como distração, mas não têm a mesma convergência de motivo, acesso e logística.",
+      "evidence": [
+        {
+          "doc": "factions.md",
+          "detail": "A Mesa do Freixo Cinzento lucra exatamente quando o conselho redireciona inspeções e cargas para armazenamento temporário sob sua custódia."
+        },
+        {
+          "doc": "logistics.md",
+          "detail": "O Entreposto da Colina Seca é operado pela Mesa; o mesmo circuito usa cordame azul-acinzentado, lacres de cera cinza pálida e depende das carretas de Meral Voss."
+        },
+        {
+          "doc": "npcs.md",
+          "detail": "Leris Vale acessa duplicatas de manifesto, Meral Voss controla a rota terrestre de contingência e Oren Selk tinha acesso recente à lanterna do Píer da Névoa Fina."
+        },
+        {
+          "doc": "timeline.md",
+          "detail": "A sequência entre apagão no píer, aviso falso de febre, sumiço da duplicata de manifesto e proposta da Mesa para centralizar a inspeção em Colina Seca aponta para coordenação."
+        },
+        {
+          "doc": "rumors.md",
+          "detail": "Os boatos contra Irmã Selka, Doran Vale, a Companhia do Litoral Quebrado e Marta Venn explicam cadeias falsas plausíveis, mas não conectam os mesmos ativos logísticos."
+        }
+      ]
+    },
+    "scoring": {
+      "required_terms": [
+        "Mesa do Freixo Cinzento",
+        "Colina Seca",
+        "manifesto",
+        "operação coordenada"
+      ],
+      "bonus_terms": [
+        "Leris Vale",
+        "Meral Voss",
+        "Oren Selk",
+        "lacres de cera cinza pálida",
+        "Cais dos Juncos",
+        "Píer da Névoa Fina"
+      ],
+      "hallucination_terms": [
+        "dragão",
+        "necromante",
+        "portal astral",
+        "biblioteca imperial"
+      ],
+      "candidate_terms": {
+        "Mesa do Freixo Cinzento": [
+          "colina seca",
+          "leris vale",
+          "meral voss",
+          "oren selk",
+          "duplicata de manifesto",
+          "lacres de cera cinza pálida",
+          "cais dos juncos"
+        ],
+        "Casa do Estaleiro Vermelho": [
+          "doran vale",
+          "reparos",
+          "escoras cortadas",
+          "quebra do mastro branco"
+        ],
+        "Círculo da Lanterna": [
+          "irmã selka",
+          "presságio",
+          "farol",
+          "lanterna apagada"
+        ],
+        "Companhia do Litoral Quebrado": [
+          "escolta",
+          "tarifas",
+          "estrada",
+          "caravana"
+        ],
+        "Consórcio da Âncora Negra": [
+          "marta venn",
+          "batelão silencioso",
+          "contrabando",
+          "armazém 9"
+        ]
+      },
+      "rubric_checks": [
+        {
+          "label": "facção líder",
+          "terms": [
+            "Mesa do Freixo Cinzento"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "objetivo estratégico",
+          "terms": [
+            "Colina Seca",
+            "inspeção",
+            "manifesto"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "conexão temporal",
+          "terms": [
+            "lanterna",
+            "aviso falso de febre",
+            "duplicata de manifesto",
+            "proposta"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "participantes prováveis",
+          "terms": [
+            "Leris Vale",
+            "Meral Voss",
+            "Oren Selk"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "uso correto de evidências",
+          "terms": [
+            "lacres de cera cinza pálida",
+            "cordame azul-acinzentado",
+            "Entreposto da Colina Seca"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "distinção entre evidência e especulação",
+          "terms": [
+            "evidência",
+            "boato",
+            "plausível"
+          ],
+          "weight": 5
+        }
+      ],
+      "false_leads": [
+        {
+          "label": "Casa do Estaleiro Vermelho",
+          "terms": [
+            "Casa do Estaleiro Vermelho",
+            "Doran Vale"
+          ]
+        },
+        {
+          "label": "Círculo da Lanterna",
+          "terms": [
+            "Círculo da Lanterna",
+            "Irmã Selka"
+          ]
+        },
+        {
+          "label": "Companhia do Litoral Quebrado",
+          "terms": [
+            "Companhia do Litoral Quebrado"
+          ]
+        },
+        {
+          "label": "Consórcio da Âncora Negra",
+          "terms": [
+            "Consórcio da Âncora Negra",
+            "Marta Venn"
+          ]
+        }
+      ],
+      "rejection_markers": [
+        "não",
+        "sem prova",
+        "sem evidência",
+        "boato",
+        "rumor",
+        "hipótese alternativa",
+        "especulação",
+        "plausível mas",
+        "pouco sustentado",
+        "insuficiente"
+      ],
+      "uncertainty_markers": [
+        "evidência",
+        "hipótese",
+        "plausível",
+        "boato",
+        "especulação",
+        "insuficiente"
+      ]
+    }
   }
 ]
-

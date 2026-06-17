@@ -39,11 +39,24 @@ class ExpectedAnswer(AppBaseModel):
     evidence: list[SupportingEvidence]
 
 
+class NamedTermGroup(AppBaseModel):
+    label: str
+    terms: list[str] = Field(default_factory=list)
+
+
+class RubricCheck(NamedTermGroup):
+    weight: int = 0
+
+
 class ScoringSpec(AppBaseModel):
     required_terms: list[str] = Field(default_factory=list)
     bonus_terms: list[str] = Field(default_factory=list)
     hallucination_terms: list[str] = Field(default_factory=list)
     candidate_terms: dict[str, list[str]] = Field(default_factory=dict)
+    rubric_checks: list[RubricCheck] = Field(default_factory=list)
+    false_leads: list[NamedTermGroup] = Field(default_factory=list)
+    rejection_markers: list[str] = Field(default_factory=list)
+    uncertainty_markers: list[str] = Field(default_factory=list)
 
 
 class QuestionSpec(AppBaseModel):
@@ -92,6 +105,9 @@ class EvaluationResult(AppBaseModel):
     hallucinated_terms: list[str]
     matched_required_terms: list[str]
     matched_bonus_terms: list[str]
+    matched_rubric_checks: list[str] = Field(default_factory=list)
+    accepted_false_leads: list[str] = Field(default_factory=list)
+    rejected_false_leads: list[str] = Field(default_factory=list)
     verdict: str
     notes: list[str]
 

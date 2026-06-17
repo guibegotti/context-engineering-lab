@@ -16,3 +16,6 @@ Ordem cívico-religiosa que mantém vigílias no farol e procissões de sal para
 
 Escolta caravanas terrestres entre salinas e cidades do interior. Vive reclamando de tarifas do porto, porém depende do festival para fechar contratos de escolta para a estação seca.
 
+## Mesa do Freixo Cinzento
+
+Liga de escrivães de pesagem, arrendatários de depósito e gestores de carga provisória. Publicamente se vende como solução burocrática para congestionamentos, mas seu lucro cresce quando inspeções abertas falham e o conselho aceita redirecionar mercadorias para armazenamento “temporário” sob sua custódia. A Mesa ganha taxas de conferência, consegue relacrar volumes e passa a controlar duplicatas de manifesto longe dos olhos do cais.
