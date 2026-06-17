@@ -269,8 +269,21 @@ def execute_selected_experiment(
     strategy: ContextStrategy,
 ) -> None:
     completed_runs = 0
+    status_placeholder = st.empty()
+    progress_placeholder = st.empty()
+
+    def show_progress(message: str, current: int, total: int) -> None:
+        status_placeholder.info(message)
+        if total > 1:
+            progress_placeholder.progress(int((current / total) * 100))
+
+    def clear_progress() -> None:
+        status_placeholder.empty()
+        progress_placeholder.empty()
+
     try:
         if run_type == "single":
+            show_progress("Executando experimento...", 0, 1)
             st.session_state.single_result = service.run(
                 question_id=question_id,
                 model_choice=model_choice,
@@ -278,12 +291,19 @@ def execute_selected_experiment(
                 execution_mode=execution_mode,
             )
             completed_runs = 1
+            show_progress("Experimento concluído.", 1, 1)
             st.session_state.experiment_mode = "single"
             st.session_state.full_results = []
             st.session_state.matrix_results = []
         elif run_type == "full":
             full_results = []
-            for item in STRATEGY_ORDER:
+            total_runs = len(STRATEGY_ORDER)
+            for idx, item in enumerate(STRATEGY_ORDER, start=1):
+                show_progress(
+                    f"Executando {idx}/{total_runs}: {strategy_label(item)}",
+                    completed_runs,
+                    total_runs,
+                )
                 full_results.append(
                     service.run(
                         question_id=question_id,
@@ -293,6 +313,11 @@ def execute_selected_experiment(
                     )
                 )
                 completed_runs += 1
+                show_progress(
+                    f"Concluído {idx}/{total_runs}: {strategy_label(item)}",
+                    completed_runs,
+                    total_runs,
+                )
 
             st.session_state.full_results = full_results
             st.session_state.experiment_mode = "full"
@@ -300,8 +325,18 @@ def execute_selected_experiment(
             st.session_state.matrix_results = []
         else:
             matrix_results = []
+            total_runs = len(MODEL_ORDER) * len(STRATEGY_ORDER)
             for model_item in MODEL_ORDER:
                 for strategy_item in STRATEGY_ORDER:
+                    next_run = completed_runs + 1
+                    show_progress(
+                        (
+                            f"Executando {next_run}/{total_runs}: "
+                            f"{model_label(model_item)} | {strategy_label(strategy_item)}"
+                        ),
+                        completed_runs,
+                        total_runs,
+                    )
                     matrix_results.append(
                         service.run(
                             question_id=question_id,
@@ -311,6 +346,14 @@ def execute_selected_experiment(
                         )
                     )
                     completed_runs += 1
+                    show_progress(
+                        (
+                            f"Concluído {completed_runs}/{total_runs}: "
+                            f"{model_label(model_item)} | {strategy_label(strategy_item)}"
+                        ),
+                        completed_runs,
+                        total_runs,
+                    )
 
             st.session_state.matrix_results = matrix_results
             st.session_state.experiment_mode = "matrix"
@@ -318,6 +361,7 @@ def execute_selected_experiment(
             st.session_state.full_results = []
 
         st.session_state.execution_error = None
+        clear_progress()
     except ExperimentExecutionError as exc:
         details = exc.details
         if completed_runs > 0:
@@ -326,6 +370,7 @@ def execute_selected_experiment(
             )
             details = f"{details}\n{partial_note}" if details else partial_note
 
+        clear_progress()
         st.session_state.execution_error = {
             "message": exc.user_message,
             "details": details,
