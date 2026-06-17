@@ -147,52 +147,95 @@ def format_context_documents_for_display(context_documents: list[str]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-def render_result_card(result) -> None:
-    st.subheader("Resposta")
-    st.markdown(result.answer)
+def create_result_card_container(container_host, key: str):
+    try:
+        return container_host.container(border=True, key=key)
+    except TypeError:
+        return container_host.container()
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric(
-        "Qualidade",
-        result.evaluation.quality_score,
-        help="Score final de 0 a 100 após combinar acertos, aderência e penalidades.",
-    )
-    col2.metric(
-        "Aderência",
-        result.evaluation.adherence_score,
-        help="Mostra o quanto a resposta ficou alinhada ao contexto e à pergunta.",
-    )
-    col3.metric(
-        "Evidências",
-        result.evaluation.evidence_score,
-        help="Indica quantos termos e pistas essenciais do gabarito apareceram na resposta.",
-    )
-    hallucination_penalty = result.evaluation.hallucination_penalty
-    penalty_display = "0" if hallucination_penalty == 0 else f"-{hallucination_penalty}"
-    col4.metric(
-        "Penalidade por alucinação",
-        penalty_display,
-        help="Desconta desvios ou termos suspeitos detectados fora do contexto esperado.",
-    )
 
-    st.caption(
-        f"Modo: `{result.mode}` | Modelo: `{result.usage.model_name}` | "
-        f"Tokens: `{result.usage.total_tokens}` | "
-        f"Latência: `{result.usage.latency_ms} ms` | "
-        f"Custo estimado: `${result.usage.estimated_cost_usd:.6f}`"
-    )
+def render_result_card(result, card_title: str | None = None, container_host=st) -> None:
+    card = create_result_card_container(container_host, key=f"result-card-{result.run_id}")
 
-    with st.expander("Contexto usado", expanded=False):
-        st.code(
-            format_context_documents_for_display(result.context_documents),
-            language="json",
+    with card:
+        if card_title:
+            st.markdown(f"### {card_title}")
+
+        st.subheader("Resposta")
+        st.markdown(result.answer)
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric(
+            "Qualidade",
+            result.evaluation.quality_score,
+            help="Score final de 0 a 100 após combinar acertos, aderência e penalidades.",
+        )
+        col2.metric(
+            "Aderência",
+            result.evaluation.adherence_score,
+            help="Mostra o quanto a resposta ficou alinhada ao contexto e à pergunta.",
+        )
+        col3.metric(
+            "Evidências",
+            result.evaluation.evidence_score,
+            help="Indica quantos termos e pistas essenciais do gabarito apareceram na resposta.",
+        )
+        hallucination_penalty = result.evaluation.hallucination_penalty
+        penalty_display = "0" if hallucination_penalty == 0 else f"-{hallucination_penalty}"
+        col4.metric(
+            "Penalidade por alucinação",
+            penalty_display,
+            help="Desconta desvios ou termos suspeitos detectados fora do contexto esperado.",
         )
 
-    with st.expander("Prompt montado", expanded=False):
-        st.code(result.context_preview, language="markdown")
+        st.caption(
+            f"Modo: `{result.mode}` | Modelo: `{result.usage.model_name}` | "
+            f"Tokens: `{result.usage.total_tokens}` | "
+            f"Latência: `{result.usage.latency_ms} ms` | "
+            f"Custo estimado: `${result.usage.estimated_cost_usd:.6f}`"
+        )
 
-    with st.expander("Notas da avaliação", expanded=False):
-        st.markdown("\n".join([f"- {note}" for note in result.evaluation.notes]))
+        with st.expander("Contexto usado", expanded=False):
+            st.code(
+                format_context_documents_for_display(result.context_documents),
+                language="json",
+            )
+
+        with st.expander("Prompt montado", expanded=False):
+            st.code(result.context_preview, language="markdown")
+
+        with st.expander("Notas da avaliação", expanded=False):
+            st.markdown("\n".join([f"- {note}" for note in result.evaluation.notes]))
+
+
+def render_result_grid(results, title_builder, container_host=st) -> None:
+    for start in range(0, len(results), 2):
+        columns = container_host.columns(2)
+        row_items = results[start : start + 2]
+        for idx, item in enumerate(row_items):
+            render_result_card(
+                item,
+                card_title=title_builder(item),
+                container_host=columns[idx],
+            )
+
+
+def render_model_comparison_section(model_item, model_results) -> None:
+    section = create_result_card_container(
+        st,
+        key=f"model-section-{model_item.value}",
+    )
+
+    with section:
+        st.markdown(f"### {model_label(model_item)}")
+        st.caption(
+            f"Os experimentos abaixo pertencem ao {model_label(model_item).lower()}."
+        )
+        render_result_grid(
+            model_results,
+            title_builder=lambda result: strategy_label(result.strategy),
+            container_host=section,
+        )
 
 
 def result_summary_row(result) -> dict[str, object]:
@@ -396,15 +439,23 @@ def render_experiments_page() -> None:
         st.session_state.full_results = []
 
     if st.session_state.experiment_mode == "single" and st.session_state.single_result is not None:
-        render_result_card(st.session_state.single_result)
+        render_result_card(
+            st.session_state.single_result,
+            card_title=(
+                f"{strategy_label(st.session_state.single_result.strategy)}"
+                f" | {model_label(st.session_state.single_result.model_choice)}"
+            ),
+        )
 
     if st.session_state.experiment_mode == "full" and st.session_state.full_results:
         st.subheader("Comparação")
-        columns = st.columns(2)
-        for idx, item in enumerate(st.session_state.full_results):
-            with columns[idx % 2]:
-                st.markdown(f"### {strategy_label(item.strategy)}")
-                render_result_card(item)
+        render_result_grid(
+            st.session_state.full_results,
+            title_builder=lambda item: (
+                f"{strategy_label(item.strategy)}"
+                f" | {model_label(item.model_choice)}"
+            ),
+        )
 
         st.markdown("### Resumo comparativo")
         st.dataframe(
@@ -415,17 +466,12 @@ def render_experiments_page() -> None:
     if st.session_state.experiment_mode == "matrix" and st.session_state.matrix_results:
         st.subheader("Matriz comparativa")
         for model_item in MODEL_ORDER:
-            st.markdown(f"### {model_label(model_item)}")
-            columns = st.columns(2)
             model_results = [
                 item
                 for item in st.session_state.matrix_results
                 if item.model_choice == model_item
             ]
-            for idx, result in enumerate(model_results):
-                with columns[idx % 2]:
-                    st.markdown(f"#### {strategy_label(result.strategy)}")
-                    render_result_card(result)
+            render_model_comparison_section(model_item, model_results)
 
         st.markdown("### Resumo da matriz")
         st.dataframe(
