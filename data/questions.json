@@ -42,7 +42,12 @@
       "hallucination_terms": [
         "dragão",
         "necromante",
-        "império solar"
+        "império solar",
+        "lich",
+        "demônio ancestral",
+        "viagem no tempo",
+        "biblioteca imperial",
+        "portal astral"
       ],
       "candidate_terms": {
         "Consórcio da Âncora Negra": [
@@ -62,7 +67,89 @@
           "pedra naval",
           "licitação"
         ]
-      }
+      },
+      "rubric_checks": [
+        {
+          "label": "facção correta",
+          "terms": [
+            "Consórcio da Âncora Negra"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "motivo econômico",
+          "terms": [
+            "contrabando",
+            "inspeção",
+            "lucro"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "conexão com o festival",
+          "terms": [
+            "festival",
+            "Maré Alta"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "oportunidade operacional",
+          "terms": [
+            "Marta Venn",
+            "armazém",
+            "cais"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "distinção entre evidência e ruído",
+          "terms": [
+            "evidência",
+            "boato",
+            "rumor"
+          ],
+          "weight": 5
+        }
+      ],
+      "false_leads": [
+        {
+          "label": "Círculo da Lanterna",
+          "terms": [
+            "Círculo da Lanterna",
+            "procissão de sal",
+            "vigília do farol"
+          ]
+        },
+        {
+          "label": "Casa do Estaleiro Vermelho",
+          "terms": [
+            "Casa do Estaleiro Vermelho",
+            "novo cais",
+            "pedra naval"
+          ]
+        }
+      ],
+      "rejection_markers": [
+        "não",
+        "sem prova",
+        "sem evidência",
+        "boato",
+        "rumor",
+        "hipótese alternativa",
+        "especulação",
+        "plausível mas",
+        "pouco sustentado",
+        "insuficiente"
+      ],
+      "uncertainty_markers": [
+        "evidência",
+        "hipótese",
+        "plausível",
+        "boato",
+        "especulação",
+        "insuficiente"
+      ]
     }
   },
   {
@@ -108,7 +195,12 @@
       "hallucination_terms": [
         "teleporte",
         "portal astral",
-        "golem de guerra"
+        "golem de guerra",
+        "dragão",
+        "assassino invisível",
+        "necromante",
+        "viagem no tempo",
+        "oráculo imperial"
       ],
       "candidate_terms": {
         "Marta Venn": [
@@ -128,7 +220,89 @@
           "pedra naval",
           "contrato de reparo"
         ]
-      }
+      },
+      "rubric_checks": [
+        {
+          "label": "NPC correto",
+          "terms": [
+            "Marta Venn"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "capacidade logística",
+          "terms": [
+            "barqueiros",
+            "depósito",
+            "cais externo"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "janela temporal",
+          "terms": [
+            "troca de guarda",
+            "fiscalização"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "histórico suspeito",
+          "terms": [
+            "transporte noturno",
+            "silêncio",
+            "favores"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "distinção entre evidência e ruído",
+          "terms": [
+            "evidência",
+            "boato",
+            "rumor"
+          ],
+          "weight": 5
+        }
+      ],
+      "false_leads": [
+        {
+          "label": "Irmã Selka",
+          "terms": [
+            "Irmã Selka",
+            "vigília do farol",
+            "prece de maré"
+          ]
+        },
+        {
+          "label": "Doran Vale",
+          "terms": [
+            "Doran Vale",
+            "fatura do estaleiro",
+            "contrato de reparo"
+          ]
+        }
+      ],
+      "rejection_markers": [
+        "não",
+        "sem prova",
+        "sem evidência",
+        "boato",
+        "rumor",
+        "hipótese alternativa",
+        "especulação",
+        "plausível mas",
+        "pouco sustentado",
+        "insuficiente"
+      ],
+      "uncertainty_markers": [
+        "evidência",
+        "hipótese",
+        "plausível",
+        "boato",
+        "especulação",
+        "insuficiente"
+      ]
     }
   },
   {
@@ -174,7 +348,12 @@
       "hallucination_terms": [
         "castelo voador",
         "biblioteca imperial",
-        "porto celestial"
+        "porto celestial",
+        "dragão marinho",
+        "portal astral",
+        "necromante",
+        "trono submerso",
+        "cidade nas nuvens"
       ],
       "candidate_terms": {
         "Cavernas de Sal Baixo": [
@@ -194,7 +373,90 @@
           "acólitos",
           "procissão"
         ]
-      }
+      },
+      "rubric_checks": [
+        {
+          "label": "local correto",
+          "terms": [
+            "Cavernas de Sal Baixo"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "segurança por acesso restrito",
+          "terms": [
+            "maré baixa",
+            "duas horas",
+            "acessível"
+          ],
+          "weight": 15
+        },
+        {
+          "label": "evasão da guarda",
+          "terms": [
+            "guarda",
+            "fora do mapa",
+            "patrulha"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "uso clandestino anterior",
+          "terms": [
+            "troca de cartas",
+            "mensageiros discretos",
+            "sigilo"
+          ],
+          "weight": 10
+        },
+        {
+          "label": "distinção entre evidência e ruído",
+          "terms": [
+            "evidência",
+            "boato",
+            "rumor"
+          ],
+          "weight": 5
+        }
+      ],
+      "false_leads": [
+        {
+          "label": "Mercado das Cordas",
+          "terms": [
+            "Mercado das Cordas",
+            "multidão",
+            "pregão"
+          ]
+        },
+        {
+          "label": "Farol de Vidro",
+          "terms": [
+            "Farol de Vidro",
+            "vigília",
+            "procissão"
+          ]
+        }
+      ],
+      "rejection_markers": [
+        "não",
+        "sem prova",
+        "sem evidência",
+        "boato",
+        "rumor",
+        "hipótese alternativa",
+        "especulação",
+        "plausível mas",
+        "pouco sustentado",
+        "insuficiente"
+      ],
+      "uncertainty_markers": [
+        "evidência",
+        "hipótese",
+        "plausível",
+        "boato",
+        "especulação",
+        "insuficiente"
+      ]
     }
   },
   {
@@ -255,7 +517,12 @@
         "dragão",
         "necromante",
         "portal astral",
-        "biblioteca imperial"
+        "biblioteca imperial",
+        "golem de guerra",
+        "deus adormecido",
+        "viagem no tempo",
+        "demônio ancestral",
+        "castelo voador"
       ],
       "candidate_terms": {
         "Mesa do Freixo Cinzento": [
