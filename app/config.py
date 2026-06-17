@@ -38,20 +38,19 @@ def get_settings() -> Settings:
         base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
         app_url=os.getenv("OPENAI_APP_URL", ""),
         app_title=os.getenv("OPENAI_APP_TITLE", "Context Engineering Lab"),
-        model_medium=os.getenv("MODEL_MEDIUM", "gpt-4.1-mini"),
-        model_strong=os.getenv("MODEL_STRONG", "gpt-4.1"),
+        model_medium=os.getenv("MODEL_MEDIUM", "gpt-5.4-mini"),
+        model_strong=os.getenv("MODEL_STRONG", "gpt-5.4"),
         medium_input_cost_per_million=float(
-            os.getenv("MODEL_MEDIUM_INPUT_COST_PER_MILLION", "0.40")
+            os.getenv("MODEL_MEDIUM_INPUT_COST_PER_MILLION", "0.75")
         ),
         medium_output_cost_per_million=float(
-            os.getenv("MODEL_MEDIUM_OUTPUT_COST_PER_MILLION", "1.60")
+            os.getenv("MODEL_MEDIUM_OUTPUT_COST_PER_MILLION", "4.50")
         ),
         strong_input_cost_per_million=float(
-            os.getenv("MODEL_STRONG_INPUT_COST_PER_MILLION", "2.00")
+            os.getenv("MODEL_STRONG_INPUT_COST_PER_MILLION", "2.50")
         ),
         strong_output_cost_per_million=float(
-            os.getenv("MODEL_STRONG_OUTPUT_COST_PER_MILLION", "8.00")
+            os.getenv("MODEL_STRONG_OUTPUT_COST_PER_MILLION", "15.00")
         ),
         results_db_path=Path(os.getenv("RESULTS_DB_PATH", str(DEFAULT_DB_PATH))),
     )
-
